@@ -155,11 +155,11 @@ class PatsyModel(BaseEstimator):
         data : dict-like (pandas dataframe)
             Input data. Column names need to match variables in formula.
         """
-        X_ = dmatrix(self.design_X_, data)
+
         if self.return_type == 'dataframe':
-            X = X_
+            X = dmatrix(self.design_X_, data, return_type='dataframe')
         else:
-            X = np.array(X_)
+            X = np.array(dmatrix(self.design_X_, data))
 
         return self.estimator_.transform(X)
 
@@ -273,8 +273,7 @@ class PatsyTransformer(BaseEstimator, TransformerMixin):
         data : dict-like (pandas dataframe)
             Input data. Column names need to match variables in formula.
         """
-        X = dmatrix(self.design_, data)
         if self.return_type == 'dataframe':
-            return X
+            return dmatrix(self.design_, data, return_type='dataframe')
         else:
-            return np.array(X)
+            return np.array(dmatrix(self.design_, data))
