@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import patsy
 from sklearn.utils.mocking import CheckingClassifier
 from sklearn.utils.testing import assert_raise_message, assert_equal
@@ -106,6 +107,20 @@ def test_stateful_transform():
     # make sure that mean of training, not test data was removed
     assert_array_equal(data_trans[:, 0], -1)
 
+def test_stateful_transform_dataframe():
+    data_train = pd.DataFrame(patsy.demo_data("x1", "x2", "y"))
+    data_train['x1'][:] = 1
+    # mean of x1 is 1
+    data_test = pd.DataFrame(patsy.demo_data("x1", "x2", "y"))
+    data_test['x1'][:] = 0
+
+    # center x1
+    est = PatsyTransformer("center(x1) + x2", return_type='dataframe')
+    est.fit(data_train)
+    data_trans = est.transform(data_test)
+    # make sure that mean of training, not test data was removed
+    assert_array_equal(data_trans['center(x1)'][:],-1)
+
 
 def test_stateful_model():
     data_train = patsy.demo_data("x1", "x2", "y")
@@ -124,3 +139,19 @@ def test_stateful_model():
     est.estimator_.check_X = check_centering
     # make sure that mean of training, not test data was removed
     est.predict(data_test)
+
+
+def test_transform_to_dataframe():
+    data_train = pd.DataFrame(patsy.demo_data("x1", "x2", "y"))
+    data_train['x1'][:] = 1
+    # mean of x1 is 1
+    data_test = pd.DataFrame(patsy.demo_data("x1", "x2", "y"))
+    data_test['x1'][:] = 0
+
+    # center x1
+    est = PatsyTransformer("center(x1) + x2", return_type='dataframe')
+    est.fit(data_train)
+    data_trans = est.transform(data_test)
+
+    # make sure result is pandas dataframe
+    assert type(data_trans) is pd.DataFrame
