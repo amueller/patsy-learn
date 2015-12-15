@@ -56,6 +56,12 @@ class PatsyModel(BaseEstimator):
         object.  See ``patsy.NAAction`` for details on what values count as
         'missing' (and how to alter this).
 
+    return_type : string, default="ndarray"
+        data type that transform method will return. Default is ``"ndarray"``
+        for numpy array, but if you would like to get Pandas dataframe (for
+        example for using it in scikit transformers with dataframe as input
+        use ``"dataframe"``
+
     Note
     ----
     PastyModel does by default not add an intercept, even if you
@@ -63,14 +69,15 @@ class PatsyModel(BaseEstimator):
 
     """
     def __init__(self, estimator, formula, add_intercept=False, eval_env=0,
-                 NA_action="drop"):
+                 NA_action="drop", return_type='ndarray'):
         self.estimator = estimator
         self.formula = formula
         self.eval_env = eval_env
         self.add_intercept = add_intercept
         self.NA_action = NA_action
+        self.return_type = return_type
 
-    def fit(self, data):
+    def fit(self, data, y=None):
         """Fit the scikit-learn model using the formula.
 
         Parameters
@@ -149,7 +156,12 @@ class PatsyModel(BaseEstimator):
         data : dict-like (pandas dataframe)
             Input data. Column names need to match variables in formula.
         """
-        X = np.array(dmatrix(self.design_X_, data))
+
+        if self.return_type == 'dataframe':
+            X = dmatrix(self.design_X_, data, return_type='dataframe')
+        else:
+            X = np.array(dmatrix(self.design_X_, data))
+
         return self.estimator_.transform(X)
 
     @if_delegate_has_method(delegate='estimator')
@@ -196,6 +208,12 @@ class PatsyTransformer(BaseEstimator, TransformerMixin):
          object.  See ``patsy.NAAction`` for details on what values count as
          'missing' (and how to alter this).
 
+    return_type : string, default="ndarray"
+        data type that transform method will return. Default is ``"ndarray"``
+        for numpy array, but if you would like to get Pandas dataframe (for
+        example for using it in scikit transformers with dataframe as input
+        use ``"dataframe"``
+
     Note
     ----
     PastyTransformer does by default not add an intercept, even if you
@@ -205,13 +223,15 @@ class PatsyTransformer(BaseEstimator, TransformerMixin):
     should not contain a left hand side.  If you need to transform both
     features and targets, use PatsyModel.
     """
-    def __init__(self, formula, add_intercept=False, eval_env=0, NA_action="drop"):
+    def __init__(self, formula, add_intercept=False, eval_env=0, NA_action="drop",
+                 return_type='ndarray'):
         self.formula = formula
         self.eval_env = eval_env
         self.add_intercept = add_intercept
         self.NA_action = NA_action
+        self.return_type = return_type
 
-    def fit(self, data):
+    def fit(self, data, y=None):
         """Fit the scikit-learn model using the formula.
 
         Parameters
@@ -219,10 +239,10 @@ class PatsyTransformer(BaseEstimator, TransformerMixin):
         data : dict-like (pandas dataframe)
             Input data. Column names need to match variables in formula.
         """
-        self._fit_transform(data)
+        self._fit_transform(data, y)
         return self
 
-    def fit_transform(self, data):
+    def fit_transform(self, data,  y=None):
         """Fit the scikit-learn model using the formula and transform it.
 
         Parameters
@@ -235,15 +255,20 @@ class PatsyTransformer(BaseEstimator, TransformerMixin):
         X_transform : ndarray
             Transformed data
         """
-        return self._fit_transform(data)
+        return self._fit_transform(data, y)
 
-    def _fit_transform(self, data):
+    def _fit_transform(self, data, y=None):
         eval_env = EvalEnvironment.capture(self.eval_env, reference=2)
         formula = _drop_intercept(self.formula, self.add_intercept)
-        design = dmatrix(formula, data, eval_env=eval_env,
-                         NA_action=self.NA_action)
+
+        design = dmatrix(formula, data, eval_env=eval_env, NA_action=self.NA_action,
+                         return_type='dataframe')
         self.design_ = design.design_info
-        return np.array(design)
+
+        if self.return_type == 'dataframe':
+            return design
+        else:
+            return np.array(design)
 
     def transform(self, data):
         """Transform with estimator using formula.
@@ -256,4 +281,7 @@ class PatsyTransformer(BaseEstimator, TransformerMixin):
         data : dict-like (pandas dataframe)
             Input data. Column names need to match variables in formula.
         """
-        return np.array(dmatrix(self.design_, data))
+        if self.return_type == 'dataframe':
+            return dmatrix(self.design_, data, return_type='dataframe')
+        else:
+            return np.array(dmatrix(self.design_, data))
