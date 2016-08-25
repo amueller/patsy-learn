@@ -4,7 +4,7 @@ import patsylearn
 from os.path import exists
 from setuptools import setup
 
-setup(name='dask',
+setup(name='patsylearn',
       version=patsylearn.__version__,
       description='Scikit-lean Patsy adaptor',
       url='http://github.com/amueller/patsylearn/',
