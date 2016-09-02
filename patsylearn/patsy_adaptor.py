@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 from sklearn.base import BaseEstimator, TransformerMixin, clone
 from sklearn.utils.metaestimators import if_delegate_has_method
@@ -119,10 +120,16 @@ class PatsyModel(BaseEstimator):
             Input data. Column names need to match variables in formula.
         """
         X = dmatrix(self.design_X_, data, return_type=self.return_type)
-        return self.estimator_.predict(X)
+
+        if self.return_type == 'dataframe':
+            return pd.DataFrame(self.estimator_.predict(X),
+                                index=X.index,
+                                columns=self.design_y_.column_names)
+        else:
+            return self.estimator_.predict(X)
 
     @if_delegate_has_method(delegate='estimator')
-    def predict_proba(self, data):
+    def predict_proba(self, data, column_prefix='proba_'):
         """Compute predict_proba with estimator using formula.
 
         Transform the data using formula, then predict probabilities on it
@@ -132,9 +139,17 @@ class PatsyModel(BaseEstimator):
         ----------
         data : dict-like (pandas dataframe)
             Input data. Column names need to match variables in formula.
+        column_prefix : str
+            Prefix for pandas dataframe column names in returned dataframe
         """
         X = dmatrix(self.design_X_, data, return_type=self.return_type)
-        return self.estimator_.predict_proba(X)
+        if self.return_type == 'dataframe':
+            columns = ['{prefix}{cls}'.format(prefix=column_prefix, cls=c)
+                       for c in self.estimator_.classes_]
+            return pd.DataFrame(self.estimator_.predict_proba(X),
+                                index=X.index, columns=columns)
+        else:
+            return self.estimator_.predict_proba(X)
 
     @if_delegate_has_method(delegate='estimator')
     def decision_function(self, data):
