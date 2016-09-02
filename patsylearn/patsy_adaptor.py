@@ -56,8 +56,8 @@ class PatsyModel(BaseEstimator):
         object.  See ``patsy.NAAction`` for details on what values count as
         'missing' (and how to alter this).
 
-    return_type : string, default="ndarray"
-        data type that transform method will return. Default is ``"ndarray"``
+    return_type : string, default="matrix"
+        data type that transform method will return. Default is ``"matrix"``
         for numpy array, but if you would like to get Pandas dataframe (for
         example for using it in scikit transformers with dataframe as input
         use ``"dataframe"``
@@ -74,7 +74,7 @@ class PatsyModel(BaseEstimator):
 
     """
     def __init__(self, estimator, formula, add_intercept=False, eval_env=0,
-                 NA_action="drop", return_type='ndarray'):
+                 NA_action="drop", return_type='matrix'):
         self.estimator = estimator
         self.formula = formula
         self.eval_env = eval_env
@@ -94,7 +94,8 @@ class PatsyModel(BaseEstimator):
         eval_env = EvalEnvironment.capture(self.eval_env, reference=1)
         formula = _drop_intercept(self.formula, self.add_intercept)
         design_y, design_X = dmatrices(formula, data, eval_env=eval_env,
-                                       NA_action=self.NA_action)
+                                       NA_action=self.NA_action,
+                                       return_type=self.return_type)
         self.design_y_ = design_y.design_info
         self.design_X_ = design_X.design_info
         self.feature_names_ = design_X.design_info.column_names
@@ -117,7 +118,7 @@ class PatsyModel(BaseEstimator):
         data : dict-like (pandas dataframe)
             Input data. Column names need to match variables in formula.
         """
-        X = np.array(dmatrix(self.design_X_, data))
+        X = dmatrix(self.design_X_, data, return_type=self.return_type)
         return self.estimator_.predict(X)
 
     @if_delegate_has_method(delegate='estimator')
@@ -132,7 +133,7 @@ class PatsyModel(BaseEstimator):
         data : dict-like (pandas dataframe)
             Input data. Column names need to match variables in formula.
         """
-        X = np.array(dmatrix(self.design_X_, data))
+        X = dmatrix(self.design_X_, data, return_type=self.return_type)
         return self.estimator_.predict_proba(X)
 
     @if_delegate_has_method(delegate='estimator')
@@ -147,7 +148,7 @@ class PatsyModel(BaseEstimator):
         data : dict-like (pandas dataframe)
             Input data. Column names need to match variables in formula.
         """
-        X = np.array(dmatrix(self.design_X_, data))
+        X = dmatrix(self.design_X_, data, return_type=self.return_type)
         return self.estimator_.decision_function(X)
 
     @if_delegate_has_method(delegate='estimator')
@@ -162,12 +163,7 @@ class PatsyModel(BaseEstimator):
         data : dict-like (pandas dataframe)
             Input data. Column names need to match variables in formula.
         """
-
-        if self.return_type == 'dataframe':
-            X = dmatrix(self.design_X_, data, return_type='dataframe')
-        else:
-            X = np.array(dmatrix(self.design_X_, data))
-
+        X = dmatrix(self.design_X_, data, return_type=self.return_type)
         return self.estimator_.transform(X)
 
     @if_delegate_has_method(delegate='estimator')
@@ -184,7 +180,8 @@ class PatsyModel(BaseEstimator):
             Data needs to contain the label column.
         """
         design_infos = (self.design_y_, self.design_X_)
-        design_y, design_X = dmatrices(design_infos, data)
+        design_y, design_X = dmatrices(design_infos, data,
+                                       return_type=self.return_type)
         return self.estimator_.score(design_X, design_y)
 
 
@@ -214,13 +211,11 @@ class PatsyTransformer(BaseEstimator, TransformerMixin):
         object.  See ``patsy.NAAction`` for details on what values count as
         'missing' (and how to alter this).
 
-    Attributes
-    ----------
     feature_names_ : list of string
         Column names / keys of training data.
 
-    return_type : string, default="ndarray"
-        data type that transform method will return. Default is ``"ndarray"``
+    return_type : string, default="matrix"
+        data type that transform method will return. Default is ``"matrix"``
         for numpy array, but if you would like to get Pandas dataframe (for
         example for using it in scikit transformers with dataframe as input
         use ``"dataframe"``
@@ -234,8 +229,8 @@ class PatsyTransformer(BaseEstimator, TransformerMixin):
     should not contain a left hand side.  If you need to transform both
     features and targets, use PatsyModel.
     """
-    def __init__(self, formula, add_intercept=False, eval_env=0, NA_action="drop",
-                 return_type='ndarray'):
+    def __init__(self, formula, add_intercept=False, eval_env=0,
+                 NA_action="drop", return_type='matrix'):
         self.formula = formula
         self.eval_env = eval_env
         self.add_intercept = add_intercept
@@ -272,17 +267,14 @@ class PatsyTransformer(BaseEstimator, TransformerMixin):
         eval_env = EvalEnvironment.capture(self.eval_env, reference=2)
         formula = _drop_intercept(self.formula, self.add_intercept)
 
-        design = dmatrix(formula, data, eval_env=eval_env, NA_action=self.NA_action,
-                         return_type='dataframe')
+        design = dmatrix(formula, data, eval_env=eval_env,
+                         NA_action=self.NA_action,
+                         return_type=self.return_type)
         self.design_ = design.design_info
-
-        if self.return_type == 'dataframe':
-            return design
-        else:
-            return np.array(design)
-
         self.feature_names_ = design.design_info.column_names
-        return np.array(design)
+
+        return design
+
 
     def transform(self, data):
         """Transform with estimator using formula.
@@ -295,7 +287,4 @@ class PatsyTransformer(BaseEstimator, TransformerMixin):
         data : dict-like (pandas dataframe)
             Input data. Column names need to match variables in formula.
         """
-        if self.return_type == 'dataframe':
-            return dmatrix(self.design_, data, return_type='dataframe')
-        else:
-            return np.array(dmatrix(self.design_, data))
+        return dmatrix(self.design_, data, return_type=self.return_type)
