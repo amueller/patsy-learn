@@ -192,7 +192,15 @@ class PatsyModel(BaseEstimator):
             Input data. Column names need to match variables in formula.
         """
         X = dmatrix(self.design_X_, data, return_type=self.return_type)
-        return self.estimator_.decision_function(X)
+        if HAS_PANDAS and self.return_type == 'dataframe':
+            if self.estimator_.decision_function_shape == 'ovr':
+                columns = [str(c) for c in self.estimator_.classes_]
+            else:
+                columns = None  # TODO: don't bail on 'ovo'
+            return pd.DataFrame(self.estimator_.decision_function(X),
+                                index=X.index, columns=columns)
+        else:
+            return self.estimator_.decision_function(X)
 
     @if_delegate_has_method(delegate='estimator')
     def transform(self, data):
@@ -207,7 +215,11 @@ class PatsyModel(BaseEstimator):
             Input data. Column names need to match variables in formula.
         """
         X = dmatrix(self.design_X_, data, return_type=self.return_type)
-        return self.estimator_.transform(X)
+        if HAS_PANDAS and self.return_type == 'dataframe':
+            return pd.DataFrame(self.estimator_.transform(X),
+                                index=X.index, columns=X.columns)
+        else:
+            self.estimator_.transform(X)
 
     @if_delegate_has_method(delegate='estimator')
     def score(self, data):

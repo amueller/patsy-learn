@@ -5,7 +5,8 @@ try:
 except ImportError:
     HAS_PANDAS = False
 import patsy
-from sklearn.naive_bayes import GaussianNB  # for predict_proba
+from sklearn.ensemble import RandomForestClassifier  # for predict_proba
+from sklearn.svm import SVC  # for decision_function
 from sklearn.utils.mocking import CheckingClassifier
 from sklearn.utils.testing import assert_raise_message, assert_equal
 from numpy.testing import assert_array_equal
@@ -159,25 +160,43 @@ def test_stateful_model():
     est.predict(data_test)
 
 
-def test_predict_probas():
-    data = patsy.demo_data("x1", "x2", "y", nlevels=2)
-    data['y'] = np.asarray(data['y'], dtype=int)
-    data_test = patsy.demo_data("x1", "x2", "y")
-    data_test['y'] = np.asarray(data_test['y'], dtype=int)
+def test_return_types():
+    # Make sure if return_type is dataframe, actually return a dataframe
+    data = patsy.demo_data("x1", "x2", "a", nlevels=3)
+    data['a'] = np.asarray([c.strip('a') for c in data['a']], dtype=int)
+    data_test = patsy.demo_data("x1", "x2", "a")
+    data_test['a'] = np.asarray([c.strip('a') for c in data_test['a']],
+                                dtype=int)
 
-    est = PatsyModel(GaussianNB(), "y ~ x1 + x2")
-    est.fit(data)
-    est.predict(data_test)
-    est.predict_proba(data_test)
-    est.predict_log_proba(data_test)
+    model = 'a ~ x1 + x2'
 
     if HAS_PANDAS:
-        # Make sure that the returned column names are correct
-        est = PatsyModel(GaussianNB(), "y ~ x1 + x2", return_type='dataframe')
+        # For classifier with predict_proba
+        est = PatsyModel(RandomForestClassifier(), model,
+                         return_type='dataframe')
         est.fit(data)
-        est.predict(data_test)
+
         proba = est.predict_proba(data_test)
         assert isinstance(proba, pd.DataFrame)
+        # Make sure column names include class names
         assert all([str(c) in proba.columns[i] for i, c in
                     enumerate(est.estimator_.classes_)])
+
         est.predict_log_proba(data_test)
+        est.transform(data_test)
+
+        # For classifier with decision_function
+        est = PatsyModel(SVC(), model, return_type='dataframe')
+        est.fit(data)
+
+        decision = est.decision_function(data_test)
+
+        est = PatsyModel(SVC(decision_function_shape='ovr'), model,
+                         return_type='dataframe')
+        est.fit(data)
+
+        decision = est.decision_function(data_test)
+        assert all([str(c) in decision.columns[i] for i, c in
+                    enumerate(est.estimator_.classes_)])
+        transform = est.transform(test_data)
+        assert isinstance(transform, pd.DataFrame)
