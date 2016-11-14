@@ -134,7 +134,7 @@ class PatsyModel(BaseEstimator):
             return self.estimator_.predict(X)
 
     @if_delegate_has_method(delegate='estimator')
-    def predict_log_proba(self, data, column_prefix='logproba_'):
+    def predict_log_proba(self, data):
         """Compute predict_log_proba with estimator using formula
 
         Transform the data using formula, then predict log-probabilities on it
@@ -144,20 +144,17 @@ class PatsyModel(BaseEstimator):
         ----------
         data : dict-like (pandas dataframe)
             Input data. Column names need to match variables in formula.
-        column_prefix : str
-            Prefix for pandas dataframe column names in returned dataframe
         """
         X = dmatrix(self.design_X_, data, return_type=self.return_type)
         if HAS_PANDAS and self.return_type == 'dataframe':
-            columns = ['{prefix}{cls}'.format(prefix=column_prefix, cls=c)
-                       for c in self.estimator_.classes_]
+            columns = [str(c) for c in self.estimator_.classes_]
             return pd.DataFrame(self.estimator_.predict_log_proba(X),
                                 index=X.index, columns=columns)
         else:
             return self.estimator_.predict_log_proba(X)
 
     @if_delegate_has_method(delegate='estimator')
-    def predict_proba(self, data, column_prefix='proba_'):
+    def predict_proba(self, data):
         """Compute predict_proba with estimator using formula.
 
         Transform the data using formula, then predict probabilities on it
@@ -167,13 +164,10 @@ class PatsyModel(BaseEstimator):
         ----------
         data : dict-like (pandas dataframe)
             Input data. Column names need to match variables in formula.
-        column_prefix : str
-            Prefix for pandas dataframe column names in returned dataframe
         """
         X = dmatrix(self.design_X_, data, return_type=self.return_type)
         if HAS_PANDAS and self.return_type == 'dataframe':
-            columns = ['{prefix}{cls}'.format(prefix=column_prefix, cls=c)
-                       for c in self.estimator_.classes_]
+            columns = [str(c) for c in self.estimator_.classes_]
             return pd.DataFrame(self.estimator_.predict_proba(X),
                                 index=X.index, columns=columns)
         else:
