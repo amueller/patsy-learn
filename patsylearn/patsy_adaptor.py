@@ -211,7 +211,7 @@ class PatsyModel(BaseEstimator):
         X = dmatrix(self.design_X_, data, return_type=self.return_type)
         if HAS_PANDAS and self.return_type == 'dataframe':
             return pd.DataFrame(self.estimator_.transform(X),
-                                index=X.index, columns=X.columns)
+                                index=X.index)
         else:
             self.estimator_.transform(X)
 
