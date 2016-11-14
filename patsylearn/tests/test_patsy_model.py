@@ -1,5 +1,9 @@
 import numpy as np
-import pandas as pd
+HAS_PANDAS = True
+try:
+    import pandas as pd
+except ImportError:
+    HAS_PANDAS = False
 import patsy
 from sklearn.utils.mocking import CheckingClassifier
 from sklearn.utils.testing import assert_raise_message, assert_equal
@@ -113,7 +117,10 @@ def test_stateful_transform():
     # make sure that mean of training, not test data was removed
     assert_array_equal(data_trans[:, 0], -1)
 
+
 def test_stateful_transform_dataframe():
+    if not HAS_PANDAS:
+        return
     data_train = pd.DataFrame(patsy.demo_data("x1", "x2", "y"))
     data_train['x1'][:] = 1
     # mean of x1 is 1

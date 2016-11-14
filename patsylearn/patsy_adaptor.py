@@ -1,5 +1,10 @@
 import numpy as np
-import pandas as pd
+
+HAS_PANDAS = True
+try:
+    import pandas as pd
+except ImportError:
+    HAS_PANDAS = False
 
 from sklearn.base import BaseEstimator, TransformerMixin, clone
 from sklearn.utils.metaestimators import if_delegate_has_method
@@ -121,7 +126,7 @@ class PatsyModel(BaseEstimator):
         """
         X = dmatrix(self.design_X_, data, return_type=self.return_type)
 
-        if self.return_type == 'dataframe':
+        if HAS_PANDAS and self.return_type == 'dataframe':
             return pd.DataFrame(self.estimator_.predict(X),
                                 index=X.index,
                                 columns=self.design_y_.column_names)
@@ -143,7 +148,7 @@ class PatsyModel(BaseEstimator):
             Prefix for pandas dataframe column names in returned dataframe
         """
         X = dmatrix(self.design_X_, data, return_type=self.return_type)
-        if self.return_type == 'dataframe':
+        if HAS_PANDAS and self.return_type == 'dataframe':
             columns = ['{prefix}{cls}'.format(prefix=column_prefix, cls=c)
                        for c in self.estimator_.classes_]
             return pd.DataFrame(self.estimator_.predict_log_proba(X),
@@ -166,7 +171,7 @@ class PatsyModel(BaseEstimator):
             Prefix for pandas dataframe column names in returned dataframe
         """
         X = dmatrix(self.design_X_, data, return_type=self.return_type)
-        if self.return_type == 'dataframe':
+        if HAS_PANDAS and self.return_type == 'dataframe':
             columns = ['{prefix}{cls}'.format(prefix=column_prefix, cls=c)
                        for c in self.estimator_.classes_]
             return pd.DataFrame(self.estimator_.predict_proba(X),

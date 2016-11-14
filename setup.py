@@ -4,6 +4,7 @@ import patsylearn
 from os.path import exists
 from setuptools import setup
 
+
 setup(name='patsylearn',
       version=patsylearn.__version__,
       description='Scikit-lean Patsy adaptor',
@@ -13,5 +14,10 @@ setup(name='patsylearn',
       license='BSD',
       keywords='scikit-learn patsy formula machine-learning',
       packages=['patsylearn'],
+      install_requires=[
+          'patsy',
+          'scikit-learn'
+      ],
+      extras_require=dict(dataframe='pandas'),
       long_description=(open('README.md').read() if exists('README.rst') else
                         ''))
