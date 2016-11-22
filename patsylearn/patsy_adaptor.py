@@ -246,6 +246,38 @@ class PatsyModel(BaseEstimator):
                                        return_type=self.return_type)
         return self.estimator_.score(design_X, design_y)
 
+    def set_params(self, **params):
+        """Set the parameters of this estimator.
+
+        The method works on simple estimators as well as on nested objects
+        (such as pipelines). The latter have parameters of the form
+        ``<component>__<parameter>`` so that it's possible to update each
+        component of a nested object.
+
+        Returns
+        -------
+        self
+        """
+        self.estimator = self.estimator.set_params(**params)
+        return self
+
+
+    def get_params(self, deep=True):
+        """Get parameters for this estimator.
+
+        Parameters
+        ----------
+        deep : boolean, optional
+            If True, will return the parameters for this estimator and
+            contained subobjects that are estimators.
+
+        Returns
+        -------
+        params : mapping of string to any
+            Parameter names mapped to their values.
+        """
+        return self.estimator.get_params(deep=deep)
+
 
 class PatsyTransformer(BaseEstimator, TransformerMixin):
     """Transformer using patsy-formulas.
