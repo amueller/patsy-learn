@@ -186,7 +186,6 @@ def test_return_types():
                 enumerate(est.estimator_.classes_)])
 
     est.predict_log_proba(data_test)
-    est.transform(data_test)
 
     # For classifier with decision_function
     est = PatsyModel(SVC(), model, return_type='dataframe')
@@ -201,5 +200,3 @@ def test_return_types():
     decision = est.decision_function(data_test)
     assert all([str(c) in decision.columns[i] for i, c in
                 enumerate(est.estimator_.classes_)])
-    transform = est.transform(test_data)
-    assert isinstance(transform, pd.DataFrame)
