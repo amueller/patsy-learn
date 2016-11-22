@@ -12,7 +12,7 @@ from sklearn.utils import column_or_1d
 from patsy import dmatrix, dmatrices, EvalEnvironment, ModelDesc, INTERCEPT
 
 
-# TODO: fit_transform fit_predicdt in PatsyModel?
+# TODO: fit_transform fit_predict in PatsyModel?
 # TODO: Allow pandas dataframe output in Transformer?
 # TODO: unsupervised models? missing output variable?
 
@@ -86,6 +86,9 @@ class PatsyModel(BaseEstimator):
         self.eval_env = eval_env
         self.add_intercept = add_intercept
         self.NA_action = NA_action
+        if return_type == 'dataframe' and not HAS_PANDAS:
+            raise ImportError("'dataframe' return type requires pandas, but "
+                              "it is not installed.")
         self.return_type = return_type
 
     def fit(self, data, y=None):
@@ -126,7 +129,7 @@ class PatsyModel(BaseEstimator):
         """
         X = dmatrix(self.design_X_, data, return_type=self.return_type)
 
-        if HAS_PANDAS and self.return_type == 'dataframe':
+        if self.return_type == 'dataframe':
             return pd.DataFrame(self.estimator_.predict(X),
                                 index=X.index,
                                 columns=self.design_y_.column_names)
@@ -146,7 +149,7 @@ class PatsyModel(BaseEstimator):
             Input data. Column names need to match variables in formula.
         """
         X = dmatrix(self.design_X_, data, return_type=self.return_type)
-        if HAS_PANDAS and self.return_type == 'dataframe':
+        if self.return_type == 'dataframe':
             columns = [str(c) for c in self.estimator_.classes_]
             return pd.DataFrame(self.estimator_.predict_log_proba(X),
                                 index=X.index, columns=columns)
@@ -166,7 +169,7 @@ class PatsyModel(BaseEstimator):
             Input data. Column names need to match variables in formula.
         """
         X = dmatrix(self.design_X_, data, return_type=self.return_type)
-        if HAS_PANDAS and self.return_type == 'dataframe':
+        if self.return_type == 'dataframe':
             columns = [str(c) for c in self.estimator_.classes_]
             return pd.DataFrame(self.estimator_.predict_proba(X),
                                 index=X.index, columns=columns)
@@ -186,7 +189,7 @@ class PatsyModel(BaseEstimator):
             Input data. Column names need to match variables in formula.
         """
         X = dmatrix(self.design_X_, data, return_type=self.return_type)
-        if HAS_PANDAS and self.return_type == 'dataframe':
+        if self.return_type == 'dataframe':
             if self.estimator_.decision_function_shape == 'ovr':
                 columns = [str(c) for c in self.estimator_.classes_]
             else:
@@ -209,7 +212,7 @@ class PatsyModel(BaseEstimator):
             Input data. Column names need to match variables in formula.
         """
         X = dmatrix(self.design_X_, data, return_type=self.return_type)
-        if HAS_PANDAS and self.return_type == 'dataframe':
+        if self.return_type == 'dataframe':
             return pd.DataFrame(self.estimator_.transform(X),
                                 index=X.index)
         else:
@@ -284,6 +287,9 @@ class PatsyTransformer(BaseEstimator, TransformerMixin):
         self.eval_env = eval_env
         self.add_intercept = add_intercept
         self.NA_action = NA_action
+        if return_type == 'dataframe' and not HAS_PANDAS:
+            raise ImportError("'dataframe' return type requires pandas, but "
+                              "it is not installed.")
         self.return_type = return_type
 
     def fit(self, data, y=None):
