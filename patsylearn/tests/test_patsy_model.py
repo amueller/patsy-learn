@@ -200,3 +200,35 @@ def test_return_types():
     decision = est.decision_function(data_test)
     assert all([str(c) in decision.columns[i] for i, c in
                 enumerate(est.estimator_.classes_)])
+
+
+def test_dataframe_in_pipeline():
+    if not HAS_PANDAS:
+        raise SkipTest("Skipping because pandas is not installed")
+
+    # Example usage from Pipeline class
+    from sklearn.datasets import samples_generator
+    from sklearn.feature_selection import SelectKBest
+    from sklearn.feature_selection import f_regression
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import StandardScaler
+
+    # generate some data to play with
+    X, y = samples_generator.make_classification(
+        n_informative=5, n_redundant=0, random_state=42)
+    X_cols = ['c%s' % i for i in range(X.shape[1])]
+    df = pd.DataFrame(X, columns=X_cols)
+    df['y'] = y
+
+    model = 'y ~ ' + ' + '.join(X_cols)
+
+#    anova_filter = PatsyModel(SelectKBest(f_regression, k=5), model,
+#                              return_type='dataframe')
+#    anova_svm = Pipeline([('anova', anova_filter), ('svc', clf)])
+    clf = PatsyModel(SVC(kernel='linear'), model, return_type='dataframe')
+    scaler = PatsyModel(StandardScaler(), model, return_type='dataframe')
+    pipe = Pipeline([('scale', scaler), ('svc', clf)])
+
+    pipe.set_params(svc__C=.1).fit(df)
+    prediction = pipe.predict(df)
+    pipe.score(df)
