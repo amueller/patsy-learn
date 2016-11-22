@@ -224,11 +224,10 @@ def test_dataframe_in_pipeline():
 
 #    anova_filter = PatsyModel(SelectKBest(f_regression, k=5), model,
 #                              return_type='dataframe')
-#    anova_svm = Pipeline([('anova', anova_filter), ('svc', clf)])
     clf = PatsyModel(SVC(kernel='linear'), model, return_type='dataframe')
     scaler = PatsyModel(StandardScaler(), model, return_type='dataframe')
     pipe = Pipeline([('scale', scaler), ('svc', clf)])
 
-    pipe.set_params(svc__C=.1).fit(df)
+    pipe.set_params(svc__C=.1).fit(df, df['y'])
     prediction = pipe.predict(df)
     pipe.score(df)
