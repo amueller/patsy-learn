@@ -216,7 +216,7 @@ class PatsyModel(BaseEstimator):
             return pd.DataFrame(self.estimator_.transform(X),
                                 index=X.index)
         else:
-            self.estimator_.transform(X)
+            return self.estimator_.transform(X)
 
     @if_delegate_has_method(delegate='estimator')
     def score(self, data):
