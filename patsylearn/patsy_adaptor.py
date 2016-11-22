@@ -229,7 +229,7 @@ class PatsyModel(BaseEstimator):
             return self.estimator_.transform(X)
 
     @if_delegate_has_method(delegate='estimator')
-    def score(self, data):
+    def score(self, data, y=None):
         """Predict with estimator using formula.
 
         Transform the data using formula, then predict on it
@@ -371,7 +371,6 @@ class PatsyTransformer(BaseEstimator, TransformerMixin):
         self.feature_names_ = design.design_info.column_names
 
         return design
-
 
     def transform(self, data):
         """Transform with estimator using formula.
