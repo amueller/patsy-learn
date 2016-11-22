@@ -213,7 +213,17 @@ class PatsyModel(BaseEstimator):
         """
         X = dmatrix(self.design_X_, data, return_type=self.return_type)
         if self.return_type == 'dataframe':
-            return pd.DataFrame(self.estimator_.transform(X),
+            _X = self.estimator_.transform(X)
+            if hasattr(self.estimator_, 'get_support'):
+                # columns may have changed
+                columns = np.array(self.design_X_.column_names)[
+                    self.estimator_.get_support()
+                ]
+            else:
+                columns = X.columns
+
+            return pd.DataFrame(_X,
+                                columns=columns,
                                 index=X.index)
         else:
             return self.estimator_.transform(X)
